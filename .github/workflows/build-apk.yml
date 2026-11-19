@@ -1,0 +1,145 @@
+name: Build Android APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Fahfile APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # A repo created from a ZIP download has no submodule links, so metroproto and libopus
+      # arrive empty. Fetch them only in that case. A real fork keeps its pinned commits.
+      - name: Fetch submodules if missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(ls -A metroproto 2>/dev/null)" ]; then
+            echo "metroproto is empty, cloning upstream"
+            rm -rf metroproto
+            git clone --depth 1 https://github.com/MetrolistGroup/metroproto.git metroproto
+          fi
+          opus_dir=opusDecoder/src/main/jni/libopus
+          if [ -z "$(ls -A "$opus_dir" 2>/dev/null)" ]; then
+            echo "libopus is empty, cloning xiph/opus v1.5.2"
+            rm -rf "$opus_dir"
+            git clone --depth 1 --branch v1.5.2 https://github.com/xiph/opus.git "$opus_dir"
+          fi
+
+      # androidApp declares a Java 25 toolchain.
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "sdk.dir=$SDK_ROOT" > local.properties
+          SDKMANAGER="$(command -v sdkmanager || true)"
+          if [ -z "$SDKMANAGER" ]; then
+            SDKMANAGER="$(ls "$SDK_ROOT"/cmdline-tools/*/bin/sdkmanager | head -n 1)"
+          fi
+          NDK_VERSION="$(sed -n 's/^androidNdk = "\(.*\)"/\1/p' gradle/libs.versions.toml)"
+          CMAKE_VERSION="$(sed -n 's/^val opusCmakeVersion = "\(.*\)"/\1/p' opusDecoder/build.gradle.kts)"
+          test -n "$NDK_VERSION" && test -n "$CMAKE_VERSION"
+          echo "NDK $NDK_VERSION, CMake $CMAKE_VERSION"
+          set +o pipefail
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses > /dev/null
+          set -o pipefail
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platform-tools" "ndk;$NDK_VERSION" "cmake;$CMAKE_VERSION"
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build debug APK
+        run: >
+          ./gradlew :androidApp:assembleDebug
+          --no-daemon
+          --no-configuration-cache
+          --stacktrace
+          -Pandroid.builder.sdkDownload=true
+          "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
+
+      - name: Collect APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-apks
+          short_sha="${GITHUB_SHA::7}"
+          count=0
+          while IFS= read -r apk; do
+            variant="$(basename "$(dirname "$apk")")"
+            count=$((count + 1))
+            cp "$apk" "build-apks/SUKIZY-${variant}-run${GITHUB_RUN_NUMBER}-${short_sha}-${count}.apk"
+          done < <(find androidApp/build/outputs/apk -type f -name '*.apk' | sort)
+          if [ "$count" -eq 0 ]; then
+            echo "No APK found under androidApp/build/outputs/apk" >&2
+            exit 1
+          fi
+          ls -lh build-apks
+
+      - name: Verify APK archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          for apk in build-apks/*.apk; do
+            # An APK is a zip file; a corrupt entry here would break installs and extraction.
+            unzip -tq "$apk"
+            sha256sum "$apk"
+          done
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fahfile-debug-apk
+          path: build-apks/*.apk
+          retention-days: 30
+          # APKs are already compressed; storing them avoids a second compression layer in the artifact zip.
+          compression-level: 0
+          if-no-files-found: error
+
+      # Diagnostics contain no secrets: this workflow reads none, and only build reports are uploaded.
+      - name: Print diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          echo "--- java"; java -version 2>&1 || true
+          echo "--- sdk root: ${ANDROID_HOME:-unset}"
+          ls "${ANDROID_HOME:-/nonexistent}" 2>&1 || true
+          echo "--- installed ndk/cmake"
+          ls "${ANDROID_HOME:-/nonexistent}/ndk" "${ANDROID_HOME:-/nonexistent}/cmake" 2>&1 || true
+          echo "--- submodule dirs"
+          ls -A metroproto | head -n 5 || true
+          ls -A opusDecoder/src/main/jni/libopus | head -n 5 || true
+          echo "--- disk"; df -h . || true
+
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: |
+            **/build/reports/**
+            **/hs_err_pid*.log
+          retention-days: 7
+          if-no-files-found: ignore

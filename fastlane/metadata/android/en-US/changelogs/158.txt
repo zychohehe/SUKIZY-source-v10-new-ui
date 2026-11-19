@@ -1,0 +1,7 @@
+v14.0.4
+Smoother scrolling on Home and Library.
+Live blur on the navigation bar and top bar pauses while a list scrolls.
+Glass backdrop no longer rebuilds its gradients on every frame.
+Library sorting is read from a cache instead of decoded on every redraw.
+Expanded baseline profile for Home, Library and glass navigation.
+Vibrant palette is now the default theme style.
