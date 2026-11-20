@@ -34,10 +34,98 @@ env:
     -Dorg.gradle.caching=true
 
 jobs:
+  # Pengecekan cepat tanpa Gradle (sekitar 20 detik). Gagal di sini = tidak ada bump versi dan tidak ada build.
+  checks:
+    name: Cek cepat
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Tes skrip dan cek resource
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s scripts -p 'test_bump_version.py'
+          python3 -m unittest discover -s scripts -p 'test_changelog.py'
+          python3 -m unittest discover -s scripts -p 'test_check_kotlin_sanity.py'
+          python3 scripts/check_compose_resource_escapes.py
+          python3 scripts/check_translation_mechanics.py
+          python3 scripts/check_kotlin_sanity.py
+
+      - name: Validasi YAML workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -ryaml -e 'Dir[".github/workflows/*.yml"].sort.each { |f| YAML.load_file(f); puts "ok #{f}" }'
+
+  # Lint Kotlin lewat Gradle. Tidak memblokir build: hasilnya hanya peringatan di ringkasan run.
+  lint:
+    name: Lint Kotlin (tidak memblokir)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Fetch submodules if missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          clone_if_empty() {
+            local dir="$1" url="$2" branch="${3:-}"
+            if [ -z "$(ls -A "$dir" 2>/dev/null)" ]; then
+              rm -rf "$dir"
+              git clone --depth 1 ${branch:+--branch "$branch"} "$url" "$dir"
+            fi
+          }
+          clone_if_empty metroproto https://github.com/MetrolistGroup/metroproto.git
+          clone_if_empty opusDecoder/src/main/jni/libopus https://github.com/xiph/opus.git v1.5.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: ktlintCheck
+        shell: bash
+        run: |
+          set -o pipefail
+          chmod +x ./gradlew
+          ./gradlew ktlintCheck --continue --no-daemon --no-configuration-cache 2>&1 | tee ktlint.log
+
+      - name: Ringkasan lint
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Lint Kotlin"
+            if grep -q "Lint error" ktlint.log 2>/dev/null; then
+              echo "Ada temuan ktlint (tidak memblokir build):"
+              echo '```'
+              grep "Lint error" ktlint.log | head -n 30
+              echo '```'
+            else
+              echo "Tidak ada temuan, atau lint tidak sempat berjalan."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # Menaikkan appVersion otomatis di setiap push ke branch default (dan run manual),
   # lalu commit balik dengan [skip ci] supaya tidak memicu build ganda.
   bump-version:
     name: Naikkan versi
+    needs: checks
     if: >-
       github.event_name != 'pull_request'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -93,7 +181,10 @@ jobs:
             while git rev-parse -q --verify "refs/tags/v$version" >/dev/null; do
               version="$(python3 scripts/bump_version.py patch)"
             done
-            git add gradle.properties README.md
+            # Changelog otomatis dari pesan commit sejak tag sebelumnya.
+            python3 scripts/changelog.py notes --version "$version" > "$RUNNER_TEMP/notes.md"
+            python3 scripts/changelog.py update --version "$version" --notes-file "$RUNNER_TEMP/notes.md"
+            git add gradle.properties README.md CHANGELOG.md
             git commit -m "chore: versi $version [skip ci]"
             git tag "v$version"
             if git push origin "HEAD:$BRANCH" && git push origin "v$version"; then
@@ -111,11 +202,14 @@ jobs:
 
   build:
     name: SUKIZY BUILD APK
-    needs: bump-version
-    # Tetap build walau bump dilewati (PR, branch lain, run tanpa bump); gagal bump = build berhenti.
-    if: ${{ !cancelled() && (needs.bump-version.result == 'success' || needs.bump-version.result == 'skipped') }}
+    needs: [checks, bump-version]
+    # Tetap build walau bump dilewati (PR, branch lain, run tanpa bump); cek cepat atau bump gagal = build berhenti.
+    if: ${{ !cancelled() && needs.checks.result == 'success' && (needs.bump-version.result == 'success' || needs.bump-version.result == 'skipped') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    # Membuat GitHub Release butuh contents: write; PR dari fork otomatis tetap read-only.
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -124,7 +218,8 @@ jobs:
           # Kosong = commit pemicu; terisi = commit hasil bump versi.
           ref: ${{ needs.bump-version.outputs.sha }}
           submodules: recursive
-          fetch-depth: 1
+          # Riwayat penuh dipakai untuk catatan rilis bila CHANGELOG belum memuat versi ini.
+          fetch-depth: 0
 
       # Repo dari ZIP tidak punya link submodule, jadi folder kosong. Clone hanya jika kosong.
       - name: Fetch submodules if missing
@@ -232,7 +327,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t found < <(find androidApp/build/outputs/apk -type f -name '*.apk' | sort)
+          mapfile -t found < <(find androidApp/build/outputs/apk/debug -type f -name '*.apk' | sort)
           if [ "${#found[@]}" -ne 1 ]; then
             printf 'Diharapkan tepat 1 APK, ditemukan %s:\n' "${#found[@]}" >&2
             printf '  %s\n' "${found[@]}" >&2
@@ -268,6 +363,43 @@ jobs:
             echo "| Signing cert SHA-256 | \`$cert\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # APK release bertanda tangan (R8 aktif, lebih kecil dan lebih cepat). Butuh 4 secret:
+      # SUKIZY_KEYSTORE_B64, SUKIZY_KEYSTORE_PASSWORD, SUKIZY_KEY_ALIAS, SUKIZY_KEY_PASSWORD.
+      # Tanpa secret atau jika build gagal, rilis tetap memakai APK debug.
+      - name: Build signed release APK
+        id: release_apk
+        continue-on-error: true
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.SUKIZY_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.SUKIZY_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SUKIZY_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SUKIZY_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "Secret keystore rilis belum lengkap; lewati build release."
+            exit 0
+          fi
+          export KEYSTORE_PATH="$RUNNER_TEMP/sukizy-release.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+          ./gradlew :androidApp:assembleRelease --no-daemon --no-configuration-cache --parallel --build-cache --stacktrace
+
+          mapfile -t found < <(find androidApp/build/outputs/apk/release -type f -name '*.apk' | sort)
+          [ "${#found[@]}" -gt 0 ] || { echo "::warning::APK release tidak ditemukan."; exit 1; }
+          pick="${found[0]}"
+          for candidate in "${found[@]}"; do
+            case "$candidate" in *universal*) pick="$candidate" ;; esac
+          done
+          version="$(python3 scripts/bump_version.py none)"
+          out="build-apks/SUKIZY-v${version}-release.apk"
+          cp "$pick" "$out"
+          unzip -tq "$out"
+          rm -f "$KEYSTORE_PATH"
+          echo "RELEASE_APK_PATH=$out" >> "$GITHUB_ENV"
+          echo "| Release APK | \`$(basename "$out")\` ($(du -h "$out" | cut -f1)) |" >> "$GITHUB_STEP_SUMMARY"
+
       # Upload APK mentah tanpa zip artifact (zip memicu "Bad file CRC value" di file manager Android).
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -277,6 +409,37 @@ jobs:
           archive: false
           retention-days: 30
           if-no-files-found: error
+
+      # GitHub Release otomatis untuk versi yang baru dibuat bump-version, dengan catatan dari CHANGELOG.
+      - name: Create GitHub Release
+        if: ${{ needs.bump-version.outputs.version != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.bump-version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          python3 scripts/changelog.py section --version "$VERSION" > "$RUNNER_TEMP/release-notes.md" \
+            || python3 scripts/changelog.py notes --version "$VERSION" --to HEAD > "$RUNNER_TEMP/release-notes.md"
+
+          debug_apk="build-apks/SUKIZY-v${VERSION}-debug.apk"
+          cp "$APK_PATH" "$debug_apk"
+          assets=("$debug_apk")
+          flags=()
+          if [ -n "${RELEASE_APK_PATH:-}" ] && [ -f "$RELEASE_APK_PATH" ]; then
+            assets=("$RELEASE_APK_PATH" "$debug_apk")
+          else
+            # Tanpa APK release bertanda tangan, tandai sebagai pre-release agar jelas ini build debug.
+            flags+=(--prerelease)
+          fi
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "${assets[@]}" --clobber
+          else
+            gh release create "$tag" "${assets[@]}" --title "SUKIZY $tag" --notes-file "$RUNNER_TEMP/release-notes.md" --verify-tag "${flags[@]}"
+          fi
+          echo "Rilis: $tag" >> "$GITHUB_STEP_SUMMARY"
 
       # Diagnostik tidak berisi secret: hanya laporan build dan versi tool.
       - name: Print diagnostics

@@ -4,6 +4,7 @@ package com.metrolist.shared.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.metrolist.shared.generated.resources.Res
+import com.metrolist.shared.generated.resources.home_continue_listening
 import com.metrolist.shared.generated.resources.home_greeting_afternoon
 import com.metrolist.shared.generated.resources.home_greeting_evening
 import com.metrolist.shared.generated.resources.home_greeting_morning
@@ -49,9 +51,13 @@ import com.metrolist.shared.generated.resources.home_greeting_subtitle
 import com.metrolist.shared.generated.resources.library
 import com.metrolist.shared.generated.resources.search
 import com.metrolist.shared.generated.resources.see_all
+import com.metrolist.shared.model.SongItem
 import com.metrolist.shared.ui.components.images.AsyncImage
+import com.metrolist.shared.ui.haptics.HapticEvent
+import com.metrolist.shared.ui.haptics.rememberMetrolistHaptics
 import com.metrolist.shared.ui.icons.MetrolistIcons
 import com.metrolist.shared.ui.utils.artistArtworkShape
+import com.metrolist.shared.ui.utils.pressScale
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
@@ -296,6 +302,9 @@ fun HomeGreetingHeader(
     onSearchClick: () -> Unit,
     onLibraryClick: () -> Unit,
     modifier: Modifier = Modifier,
+    nowPlaying: SongItem? = null,
+    isPlaying: Boolean = false,
+    onTogglePlay: () -> Unit = {},
 ) {
     val greeting =
         remember {
@@ -358,6 +367,9 @@ fun HomeGreetingHeader(
                 )
             }
         }
+        if (nowPlaying != null) {
+            HomeContinueCard(song = nowPlaying, isPlaying = isPlaying, onTogglePlay = onTogglePlay)
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             HomeBentoTile(
                 icon = MetrolistIcons.Default.Search,
@@ -388,12 +400,18 @@ private fun HomeBentoTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptics = rememberMetrolistHaptics()
+    val interactionSource = remember { MutableInteractionSource() }
     Surface(
-        onClick = onClick,
-        modifier = modifier,
+        onClick = {
+            haptics.perform(HapticEvent.PRESS)
+            onClick()
+        },
+        modifier = modifier.pressScale(interactionSource),
         shape = RoundedCornerShape(24.dp),
         color = container,
         contentColor = content,
+        interactionSource = interactionSource,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp),
@@ -412,6 +430,78 @@ private fun HomeBentoTile(
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** Kartu "Lanjutkan mendengarkan": lagu yang sedang aktif dengan tombol play/pause cepat. */
+@Composable
+private fun HomeContinueCard(
+    song: SongItem,
+    isPlaying: Boolean,
+    onTogglePlay: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val haptics = rememberMetrolistHaptics()
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(colors.surfaceContainerHigh)
+                .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AsyncImage(
+            url = song.thumbnail,
+            contentDescription = null,
+            shape = RoundedCornerShape(18.dp),
+            modifier = Modifier.size(60.dp).clip(RoundedCornerShape(18.dp)),
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = stringResource(Res.string.home_continue_listening),
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.primary,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = song.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = song.artists.joinToString { it.name },
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Box(
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.primary)
+                    .clickable {
+                        haptics.toggle(!isPlaying)
+                        onTogglePlay()
+                    },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (isPlaying) MetrolistIcons.Rounded.Pause else MetrolistIcons.Rounded.PlayArrow,
+                contentDescription = null,
+                tint = colors.onPrimary,
+                modifier = Modifier.size(26.dp),
             )
         }
     }

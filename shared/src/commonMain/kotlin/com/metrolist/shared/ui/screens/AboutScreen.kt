@@ -230,7 +230,7 @@ fun AboutScreen(
                 onContributorLongClick = onContributorLongClick,
             )
 
-            ClaudeContributorSection(colorScheme = colorScheme)
+            ClaudeContributorSection(colorScheme = colorScheme, onClick = { openCommunityLink(aboutClaudeLink) })
 
             CollaboratorsList(
                 contributors = AboutContributors.leads,
@@ -516,7 +516,10 @@ private fun CollaboratorsList(
 
 /** Kontributor Claude (Anthropic), ditampilkan tepat di bawah bagian Kreator. */
 @Composable
-private fun ClaudeContributorSection(colorScheme: ColorScheme) {
+private fun ClaudeContributorSection(
+    colorScheme: ColorScheme,
+    onClick: () -> Unit,
+) {
     Column(Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(Res.string.credits_contributor_section),
@@ -525,6 +528,7 @@ private fun ClaudeContributorSection(colorScheme: ColorScheme) {
             modifier = Modifier.padding(top = 8.dp, bottom = 12.dp).semantics { heading() },
         )
         Surface(
+            onClick = onClick,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             color = colorScheme.surfaceContainer,
@@ -563,6 +567,12 @@ private fun ClaudeContributorSection(colorScheme: ColorScheme) {
                         color = colorScheme.onSurfaceVariant,
                     )
                 }
+                Icon(
+                    imageVector = MetrolistIcons.Outlined.ChevronRight,
+                    contentDescription = null,
+                    tint = colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
             }
         }
     }

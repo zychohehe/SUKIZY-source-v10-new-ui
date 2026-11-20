@@ -148,6 +148,7 @@ object AboutContributors {
 enum class AboutCommunityLinkKind {
     TIKTOK,
     LICENSE,
+    CLAUDE,
 }
 
 data class AboutCommunityLink(
@@ -159,6 +160,9 @@ val aboutCommunityLinks: List<AboutCommunityLink> =
     listOf(
         AboutCommunityLink(AboutCommunityLinkKind.TIKTOK, "https://www.tiktok.com/@a2unknowwn"),
     )
+
+val aboutClaudeLink: AboutCommunityLink =
+    AboutCommunityLink(AboutCommunityLinkKind.CLAUDE, "https://claude.ai")
 
 val aboutLicenseLink: AboutCommunityLink =
     AboutCommunityLink(AboutCommunityLinkKind.LICENSE, "https://github.com/MetrolistGroup/Metrolist/blob/main/LICENSE")
@@ -204,6 +208,7 @@ data class AboutScreenText(
         when (kind) {
             AboutCommunityLinkKind.TIKTOK -> tiktok
             AboutCommunityLinkKind.LICENSE -> license
+            AboutCommunityLinkKind.CLAUDE -> "Claude"
         }
 }
 
@@ -220,6 +225,7 @@ internal fun CommunitySection(
                         when (link.kind) {
                             AboutCommunityLinkKind.TIKTOK -> MetrolistIconsBrand.TikTok
                             AboutCommunityLinkKind.LICENSE -> MetrolistIcons.Outlined.Info
+                            AboutCommunityLinkKind.CLAUDE -> MetrolistIcons.Outlined.Info
                         },
                     title = text.communityLabel(link.kind),
                     onClick = { onOpenLink(link) },

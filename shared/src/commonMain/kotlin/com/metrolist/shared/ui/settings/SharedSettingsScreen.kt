@@ -888,13 +888,24 @@ private fun SettingsRootGroup(
     onPageSelected: (SettingsPageId) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = group.title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium,
+        Row(
             modifier = Modifier.padding(start = 16.dp, end = 32.dp, top = 8.dp, bottom = 12.dp),
-        )
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(width = 4.dp, height = 16.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.primary),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = group.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+        }
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -954,9 +965,20 @@ internal fun SettingsNavigationRow(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val resolvedIconTint = iconTint ?: MaterialTheme.colorScheme.onSurfaceVariant
+        val resolvedIconTint = iconTint ?: MaterialTheme.colorScheme.onPrimaryContainer
         Box(
-            modifier = Modifier.size(iconSize + 8.dp),
+            modifier =
+                Modifier
+                    .size(iconSize + 16.dp)
+                    .then(
+                        if (iconTint == null) {
+                            Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                        } else {
+                            Modifier
+                        },
+                    ),
             contentAlignment = Alignment.Center,
         ) {
             if (customIcon != null) {
@@ -1002,13 +1024,24 @@ internal fun SettingsItemGroup(
                 modifier = Modifier.padding(start = horizontalPadding, end = horizontalPadding * 2, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text(
-                    text = group.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium,
+                Row(
                     modifier = Modifier.semantics { heading() },
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier
+                            .size(width = 4.dp, height = 16.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = group.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
                 group.description?.let {
                     Text(
                         it,

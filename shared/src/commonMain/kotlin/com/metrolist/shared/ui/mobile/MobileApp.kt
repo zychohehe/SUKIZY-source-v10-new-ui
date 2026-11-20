@@ -1116,6 +1116,9 @@ fun MobileApp(
                                                                 onSearchClick = { selectTab(MobileRoute.Search) },
                                                                 onLibraryClick = { selectTab(MobileRoute.Library) },
                                                                 modifier = Modifier.padding(top = MdSpacing.xs),
+                                                                nowPlaying = playerState.currentSong,
+                                                                isPlaying = playerState.isPlaying,
+                                                                onTogglePlay = { playbackController.togglePlayPause() },
                                                             )
                                                         }
                                                     }

@@ -99,6 +99,15 @@ import com.metrolist.shared.generated.resources.loading
 import com.metrolist.shared.generated.resources.more_options
 import com.metrolist.shared.generated.resources.retry
 import com.metrolist.shared.generated.resources.saved
+import com.metrolist.shared.generated.resources.search_browse_title
+import com.metrolist.shared.generated.resources.search_category_chill
+import com.metrolist.shared.generated.resources.search_category_focus
+import com.metrolist.shared.generated.resources.search_category_hiphop
+import com.metrolist.shared.generated.resources.search_category_party
+import com.metrolist.shared.generated.resources.search_category_pop
+import com.metrolist.shared.generated.resources.search_category_rock
+import com.metrolist.shared.generated.resources.search_category_throwback
+import com.metrolist.shared.generated.resources.search_category_workout
 import com.metrolist.shared.generated.resources.search_load_more_failed
 import com.metrolist.shared.generated.resources.search_online_failed
 import com.metrolist.shared.generated.resources.song_type
@@ -129,6 +138,7 @@ import com.metrolist.shared.ui.components.ChipShelf
 import com.metrolist.shared.ui.components.CollectionPreviews
 import com.metrolist.shared.ui.components.ContainedLoadingIndicator
 import com.metrolist.shared.ui.components.FittingText
+import com.metrolist.shared.ui.components.GenreCard
 import com.metrolist.shared.ui.components.PlaylistCoverImage
 import com.metrolist.shared.ui.components.PopupContent
 import com.metrolist.shared.ui.components.PopupVisibility
@@ -165,6 +175,7 @@ import com.metrolist.shared.viewmodels.SearchViewModel.SearchUiState
 import com.metrolist.shared.viewmodels.searchPresentation
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.flow.distinctUntilChanged
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 data class SearchContentText(
@@ -428,6 +439,9 @@ private fun SearchEmptyState(
         contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp + bottomContentPadding),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
+        item(key = "search_browse") {
+            SearchBrowseCategories(onCategoryClick = onHistoryItemClick, isWide = isWide)
+        }
         if (recentSearchItems.isNotEmpty()) {
             item {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
@@ -542,17 +556,65 @@ private fun SearchEmptyState(
                     }
                 }
             }
-        } else if (recentSearchItems.isEmpty()) {
-            item {
+        }
+    }
+}
+
+private val SearchBrowseEntries: List<Pair<StringResource, String>> =
+    listOf(
+        Res.string.search_category_pop to "pop hits",
+        Res.string.search_category_hiphop to "hip hop hits",
+        Res.string.search_category_rock to "rock classics",
+        Res.string.search_category_chill to "chill music",
+        Res.string.search_category_workout to "workout music",
+        Res.string.search_category_focus to "focus music",
+        Res.string.search_category_party to "party hits",
+        Res.string.search_category_throwback to "throwback hits",
+    )
+
+/** Kategori mood dan genre bergaya bento; menekannya langsung menjalankan pencarian. */
+@Composable
+private fun SearchBrowseCategories(
+    onCategoryClick: (String) -> Unit,
+    isWide: Boolean,
+) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 1400.dp).fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
                 Box(
-                    modifier = Modifier.fillParentMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = text.startTypingToSearch,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Modifier
+                        .size(width = 4.dp, height = 24.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+                )
+                Text(
+                    text = stringResource(Res.string.search_browse_title),
+                    style = MaterialTheme.typography.headlineMediumEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SearchBrowseEntries.chunked(if (isWide) 4 else 2).forEach { rowItems ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowItems.forEach { (label, query) ->
+                            GenreCard(
+                                title = stringResource(label),
+                                onClick = { onCategoryClick(query) },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(20.dp),
+                            )
+                        }
+                        // Baris terakhir yang tidak penuh tetap rata dengan kolom di atasnya.
+                        repeat((if (isWide) 4 else 2) - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
         }

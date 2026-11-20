@@ -214,7 +214,7 @@ fun PlayerPrimaryControls(
         } else {
             160.dp
         }
-    val sideShape = RoundedCornerShape(effectiveSideButtonHeight / 2)
+    val sideShape = RoundedCornerShape(minOf(effectiveSideButtonHeight / 2, 32.dp))
     val playShape =
         if (useRoundedRect) {
             RoundedCornerShape(16.dp)
@@ -232,7 +232,10 @@ fun PlayerPrimaryControls(
         horizontalArrangement = Arrangement.Center,
     ) {
         FilledTonalButton(
-            onClick = { onSkipPrevious?.invoke() },
+            onClick = {
+                haptics.perform(HapticEvent.PRESS)
+                onSkipPrevious?.invoke()
+            },
             enabled = onSkipPrevious != null,
             shapes = ButtonDefaults.shapes(shape = sideShape),
             interactionSource = prevInteractionSource,
@@ -363,7 +366,10 @@ fun PlayerPrimaryControls(
         Spacer(Modifier.width(if (isCompact) 6.dp else 8.dp))
 
         FilledTonalButton(
-            onClick = { onSkipNext?.invoke() },
+            onClick = {
+                haptics.perform(HapticEvent.PRESS)
+                onSkipNext?.invoke()
+            },
             enabled = onSkipNext != null,
             shapes = ButtonDefaults.shapes(shape = sideShape),
             interactionSource = nextInteractionSource,
