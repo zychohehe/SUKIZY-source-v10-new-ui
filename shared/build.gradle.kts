@@ -312,6 +312,8 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.RequiresOptIn")
             languageSettings.optIn("kotlin.ExperimentalStdlibApi")
+            // Sisa package lama (com.auralis) tidak punya expect/dependency di project ini; jangan ikut dikompilasi.
+            kotlin.exclude("**/com/auralis/**")
         }
         getByName("commonMain") {
             dependencies {

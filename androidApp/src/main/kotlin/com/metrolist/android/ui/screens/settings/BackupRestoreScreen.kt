@@ -71,7 +71,6 @@ import com.metrolist.android.playlistimport.TidalLoginScreen
 import com.metrolist.android.playlistimport.containsAndroidInaccessibleReference
 import com.metrolist.android.playlistimport.preparePlaylistBatch
 import com.metrolist.android.playlistimport.readPlaylistFile
-import com.metrolist.android.spotifyimport.SpotifyImportLaunchRequest
 import com.metrolist.android.spotifyimport.SpotifyLoginScreen
 import com.metrolist.android.spotifyimport.SpotifyPlaylistPickerSheet
 import com.metrolist.android.spotifyimport.SpotifyPlaylistPreviewSheet
@@ -347,14 +346,6 @@ fun BackupRestoreScreen(onNavigateBack: () -> Unit) {
 
     var showSpotifyProviderDialog by remember { mutableStateOf(false) }
     var spotifyInputUrl by remember { mutableStateOf("") }
-    val spotifyLaunchPending by SpotifyImportLaunchRequest.isPending.collectAsState()
-    LaunchedEffect(spotifyLaunchPending) {
-        if (spotifyLaunchPending) {
-            SpotifyImportLaunchRequest.consume()
-            spotifyInputUrl = ""
-            showSpotifyProviderDialog = true
-        }
-    }
     var showSpotifyLogin by remember { mutableStateOf(false) }
     var isSpotifyAuthenticating by remember { mutableStateOf(false) }
     var spotifyAuthenticationError by remember { mutableStateOf<String?>(null) }

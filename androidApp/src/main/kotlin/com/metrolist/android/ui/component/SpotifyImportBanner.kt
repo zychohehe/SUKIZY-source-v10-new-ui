@@ -24,8 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.metrolist.shared.generated.resources.Res
-import com.metrolist.shared.generated.resources.import_from_spotify
-import com.metrolist.shared.generated.resources.import_provider_spotify_desc
+import com.metrolist.shared.generated.resources.import_playlist
+import com.metrolist.shared.generated.resources.import_playlist_banner_desc
 import com.metrolist.shared.ui.icons.MetrolistIcons
 import org.jetbrains.compose.resources.stringResource
 
@@ -65,7 +65,7 @@ fun SpotifyImportBanner(
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(Res.string.import_from_spotify),
+                text = stringResource(Res.string.import_playlist),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
@@ -73,7 +73,7 @@ fun SpotifyImportBanner(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = stringResource(Res.string.import_provider_spotify_desc),
+                text = stringResource(Res.string.import_playlist_banner_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.85f),
                 maxLines = 2,

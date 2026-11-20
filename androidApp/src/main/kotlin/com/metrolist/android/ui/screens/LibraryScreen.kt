@@ -17,6 +17,19 @@ import android.os.Looper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,7 +87,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.metrolist.android.LocalMiniPlayerBottomInset
 import com.metrolist.android.extensions.isInternetConnected
 import com.metrolist.android.playback.LocalPlayerConnection
-import com.metrolist.android.spotifyimport.SpotifyImportLaunchRequest
 import com.metrolist.android.ui.component.AdaptiveModalBottomSheet
 import com.metrolist.android.ui.component.SpotifyImportBanner
 import com.metrolist.android.ui.component.SwipeGestureHandler
@@ -559,10 +571,7 @@ fun LibraryScreen(
                 scrollState = activeLibraryGridState,
                 headerBanner = {
                     SpotifyImportBanner(
-                        onClick = {
-                            SpotifyImportLaunchRequest.request()
-                            onNavigateToPlaylistImport()
-                        },
+                        onClick = onNavigateToPlaylistImport,
                     )
                 },
             )
@@ -816,6 +825,7 @@ fun LibraryScreen(
         PlaylistNameDialog(
             title = stringResource(Res.string.create_playlist),
             confirmLabel = stringResource(Res.string.create_playlist),
+            icon = MetrolistIcons.AutoMirrored.Filled.PlaylistAdd,
             value = createName,
             onValueChange = { createName = it },
             onDismiss = { showCreateDialog = false },
@@ -836,6 +846,7 @@ fun LibraryScreen(
         PlaylistNameDialog(
             title = stringResource(Res.string.rename_playlist),
             confirmLabel = stringResource(Res.string.rename),
+            icon = MetrolistIcons.Outlined.Edit,
             value = renameName,
             onValueChange = { renameName = it },
             onDismiss = { playlistToRename = null },
@@ -887,72 +898,112 @@ fun LibraryScreen(
 private fun PlaylistNameDialog(
     title: String,
     confirmLabel: String,
+    icon: ImageVector,
     value: String,
     onValueChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
     val isTv = LocalIsTv.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var tvKeyboardRequested by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        shape = RoundedCornerShape(32.dp),
+        // Semua konten berada di slot text agar bisa full lebar dan rata tengah.
         text = {
-            val focusManager = LocalFocusManager.current
-            val keyboardController = LocalSoftwareKeyboardController.current
-            var tvKeyboardRequested by remember { mutableStateOf(false) }
-            OutlinedTextField(
-                value,
-                onValueChange,
-                label = { Text(stringResource(Res.string.playlist_name)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(showKeyboardOnFocus = !isTv || tvKeyboardRequested),
-                modifier =
-                    Modifier.onFocusChanged { if (!it.isFocused) tvKeyboardRequested = false }.onPreviewKeyEvent { event ->
-                        if (!isTv) return@onPreviewKeyEvent false
-                        when (event.key) {
-                            Key.DirectionCenter, Key.Enter -> {
-                                if (event.type == KeyEventType.KeyUp) {
-                                    tvKeyboardRequested = true
-                                    keyboardController?.show()
-                                }
-                                true
-                            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(30.dp),
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(20.dp))
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    label = { Text(stringResource(Res.string.playlist_name)) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(20.dp),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+                    keyboardOptions = KeyboardOptions(showKeyboardOnFocus = !isTv || tvKeyboardRequested),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) tvKeyboardRequested = false }
+                            .onPreviewKeyEvent { event ->
+                                if (!isTv) return@onPreviewKeyEvent false
+                                when (event.key) {
+                                    Key.DirectionCenter, Key.Enter -> {
+                                        if (event.type == KeyEventType.KeyUp) {
+                                            tvKeyboardRequested = true
+                                            keyboardController?.show()
+                                        }
+                                        true
+                                    }
 
-                            Key.DirectionDown, Key.DirectionRight, Key.DirectionUp, Key.DirectionLeft -> {
-                                if (event.type == KeyEventType.KeyDown) {
-                                    keyboardController?.hide()
-                                    focusManager.moveFocus(
-                                        if (event.key == Key.DirectionDown ||
-                                            event.key == Key.DirectionRight
-                                        ) {
-                                            FocusDirection.Next
-                                        } else {
-                                            FocusDirection.Previous
-                                        },
-                                    )
-                                }
-                                true
-                            }
+                                    Key.DirectionDown, Key.DirectionRight, Key.DirectionUp, Key.DirectionLeft -> {
+                                        if (event.type == KeyEventType.KeyDown) {
+                                            keyboardController?.hide()
+                                            focusManager.moveFocus(
+                                                if (event.key == Key.DirectionDown ||
+                                                    event.key == Key.DirectionRight
+                                                ) {
+                                                    FocusDirection.Next
+                                                } else {
+                                                    FocusDirection.Previous
+                                                },
+                                            )
+                                        }
+                                        true
+                                    }
 
-                            else -> {
-                                false
-                            }
-                        }
-                    },
-            )
-        },
-        confirmButton = {
-            TextButton(
-                enabled = value.isNotBlank(),
-                onClick = onConfirm,
-                modifier = Modifier.tvFocusHighlight(CircleShape),
-                shapes = ButtonDefaults.shapes(),
-            ) { Text(confirmLabel) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.tvFocusHighlight(CircleShape), shapes = ButtonDefaults.shapes()) {
-                Text(stringResource(Res.string.cancel))
+                                    else -> {
+                                        false
+                                    }
+                                }
+                            },
+                )
+                Spacer(Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(48.dp).tvFocusHighlight(CircleShape),
+                    ) { Text(stringResource(Res.string.cancel), maxLines = 1) }
+                    Button(
+                        onClick = onConfirm,
+                        enabled = value.isNotBlank(),
+                        modifier = Modifier.weight(1f).height(48.dp).tvFocusHighlight(CircleShape),
+                    ) { Text(confirmLabel, maxLines = 1) }
+                }
             }
         },
+        confirmButton = {},
+        outlineActions = false,
     )
 }
