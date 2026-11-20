@@ -4,7 +4,7 @@
 
 **Pemutar musik YouTube Music dengan tampilan gaya iOS yang ringan untuk Android**
 
-Versi **14.0.7**
+Versi **14.0.8**
 
 [![TikTok](https://img.shields.io/badge/TikTok-@a2unknowwn-000000?style=for-the-badge&logo=tiktok&logoColor=white)](https://www.tiktok.com/@a2unknowwn)
 [![GitHub](https://img.shields.io/badge/GitHub-zychohehe-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/zychohehe)
