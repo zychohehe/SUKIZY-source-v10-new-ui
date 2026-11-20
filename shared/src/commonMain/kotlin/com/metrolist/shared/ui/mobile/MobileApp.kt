@@ -1112,7 +1112,11 @@ fun MobileApp(
                                                     }
                                                     if (homeState.error.isNullOrBlank()) {
                                                         item(key = "home_greeting") {
-                                                            HomeGreetingHeader(Modifier.padding(top = MdSpacing.xs))
+                                                            HomeGreetingHeader(
+                                                                onSearchClick = { selectTab(MobileRoute.Search) },
+                                                                onLibraryClick = { selectTab(MobileRoute.Library) },
+                                                                modifier = Modifier.padding(top = MdSpacing.xs),
+                                                            )
                                                         }
                                                     }
                                                     if (homeState.chips.isNotEmpty()) {

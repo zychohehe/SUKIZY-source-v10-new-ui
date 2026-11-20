@@ -5543,4 +5543,8 @@
     <string name="home_greeting_night">Good night</string>
     <!-- Translators: Supporting line under the greeting at the top of the Home screen. -->
     <string name="home_greeting_subtitle">What are we listening to today?</string>
+    <!-- Translators: Section heading in the About screen for contributors who helped build the app. -->
+    <string name="credits_contributor_section">Contributor</string>
+    <!-- Translators: Role shown under Claude in the About screen. -->
+    <string name="credits_contributor_claude_role">Design and code contributor</string>
 </resources>

@@ -2502,4 +2502,6 @@
     <string name="home_greeting_evening">Selamat sore</string>
     <string name="home_greeting_night">Selamat malam</string>
     <string name="home_greeting_subtitle">Mau dengar apa hari ini?</string>
+    <string name="credits_contributor_section">Kontributor</string>
+    <string name="credits_contributor_claude_role">Kontributor desain dan kode</string>
 </resources>

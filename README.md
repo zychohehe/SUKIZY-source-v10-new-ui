@@ -4,7 +4,7 @@
 
 **Pemutar musik YouTube Music dengan tampilan gaya iOS yang ringan untuk Android**
 
-Versi **14.0.8**
+Versi **14.1.0**
 
 [![TikTok](https://img.shields.io/badge/TikTok-@a2unknowwn-000000?style=for-the-badge&logo=tiktok&logoColor=white)](https://www.tiktok.com/@a2unknowwn)
 [![GitHub](https://img.shields.io/badge/GitHub-zychohehe-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/zychohehe)
@@ -14,12 +14,13 @@ Versi **14.0.8**
 > [!WARNING]
 > Memakai SUKIZY untuk mengakses YouTube Music bisa melanggar Ketentuan Layanan YouTube. Risiko ditanggung pengguna sendiri.
 
-## Yang baru di 14.0.8
+## Yang baru di 14.1.0
 
-- **Versi otomatis:** workflow SUKIZY BUILD APK menaikkan `appVersion` (patch) di setiap push ke branch default, memperbarui README, membuat tag `vX.Y.Z`, dan memberi nama APK sesuai versi. `versionCode` kini dihitung dari `appVersion`. Run manual bisa memilih patch, minor, major, atau none.
-- **Home lebih keren:** kartu sapaan bergradien sesuai jam di puncak Home dan judul section dengan aksen warna tema.
-- **Koleksi lebih keren:** judul Koleksi, kartu akses cepat bergradien dengan warna tema bergantian.
-- **Search lebih keren:** kolom pencarian dengan garis tipis warna tema dan riwayat pencarian berbentuk kartu.
+- **Gaya baru ala tren 2026 (bento + aurora):** Home punya kartu sapaan bergradien tiga warna tema dengan dua ubin pintasan (Cari dan Koleksi). Sudut lebih besar, tipografi lebih tebal, tanpa blur supaya tetap ringan.
+- **Koleksi:** judul besar, kartu akses cepat bergradien dengan warna bergantian, dan baris daftar berbentuk kartu tonal.
+- **Search:** kolom pencarian dengan garis tipis warna tema dan riwayat pencarian berbentuk kartu.
+- **Tentang:** bagian *Kontributor* dengan **Claude** tepat di bawah Kreator.
+- **Versi otomatis:** workflow SUKIZY BUILD APK menaikkan patch di setiap push ke branch default, memperbarui README, membuat tag `vX.Y.Z`, dan memberi nama APK sesuai versi. Kalau push sudah mengubah `appVersion` sendiri (seperti rilis ini), versinya dipakai apa adanya. `versionCode` dihitung dari `appVersion`.
 
 ## Yang baru di 14.0.7
 
@@ -47,6 +48,10 @@ Versi **14.0.8**
 Dikembangkan oleh [zychohehe](https://github.com/zychohehe).
 
 Sosial media: [TikTok @a2unknowwn](https://www.tiktok.com/@a2unknowwn)
+
+### Kontributor
+
+- **Claude** (Anthropic): kontributor desain dan kode.
 
 ## Build
 

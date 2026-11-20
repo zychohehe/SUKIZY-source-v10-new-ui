@@ -2,6 +2,7 @@
 
 package com.metrolist.shared.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,12 +14,12 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.metrolist.shared.constants.ThumbnailCornerRadius
 import com.metrolist.shared.generated.resources.Res
 import com.metrolist.shared.generated.resources.more_options
 import com.metrolist.shared.ui.icons.MetrolistIcons
@@ -34,10 +35,11 @@ fun LibraryItemContainer(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val shape = if (isGridView) gridCellShape() else RoundedCornerShape(ThumbnailCornerRadius)
+    val shape = if (isGridView) gridCellShape() else RoundedCornerShape(20.dp)
     Row(
         Modifier
             .clip(shape)
+            .then(if (isGridView) Modifier else Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow))
             .onSecondaryClick(onMenuClick)
             .then(modifier)
             .fillMaxWidth(),

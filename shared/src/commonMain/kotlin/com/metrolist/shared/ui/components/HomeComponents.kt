@@ -4,6 +4,7 @@ package com.metrolist.shared.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,8 @@ import com.metrolist.shared.generated.resources.home_greeting_evening
 import com.metrolist.shared.generated.resources.home_greeting_morning
 import com.metrolist.shared.generated.resources.home_greeting_night
 import com.metrolist.shared.generated.resources.home_greeting_subtitle
+import com.metrolist.shared.generated.resources.library
+import com.metrolist.shared.generated.resources.search
 import com.metrolist.shared.generated.resources.see_all
 import com.metrolist.shared.ui.components.images.AsyncImage
 import com.metrolist.shared.ui.icons.MetrolistIcons
@@ -284,62 +287,130 @@ private fun greetingForHour(hour: Int): StringResource =
         else -> Res.string.home_greeting_night
     }
 
-/** Kartu sapaan di puncak Home: gradien lembut dari warna tema, sapaan sesuai jam, dan tombol play dekoratif. */
+/**
+ * Header Home gaya bento: kartu sapaan beraksen aurora (gradien tiga warna tema) dan dua ubin pintasan
+ * ke Cari dan Koleksi. Tanpa blur supaya tetap ringan.
+ */
 @Composable
-fun HomeGreetingHeader(modifier: Modifier = Modifier) {
+fun HomeGreetingHeader(
+    onSearchClick: () -> Unit,
+    onLibraryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val greeting =
         remember {
             greetingForHour(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour)
         }
     val colors = MaterialTheme.colorScheme
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            colors.primaryContainer,
-                            colors.tertiaryContainer.copy(alpha = 0.85f),
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                colors.primaryContainer,
+                                colors.tertiaryContainer,
+                                colors.secondaryContainer,
+                            ),
                         ),
                     ),
-                ),
-    ) {
-        // Lingkaran dekoratif di pojok kanan atas untuk memberi kedalaman tanpa blur.
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 14.dp, end = 14.dp)
-                .size(44.dp)
-                .background(colors.onPrimaryContainer.copy(alpha = 0.12f), CircleShape),
-            contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = MetrolistIcons.Default.PlayArrow,
-                contentDescription = null,
-                tint = colors.onPrimaryContainer,
-                modifier = Modifier.size(24.dp),
+            // Dua lingkaran besar transparan memberi kedalaman ala aurora tanpa blur.
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 12.dp, end = 12.dp)
+                    .size(96.dp)
+                    .background(colors.onPrimaryContainer.copy(alpha = 0.08f), CircleShape),
+            )
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = 8.dp, end = 52.dp)
+                    .size(44.dp)
+                    .background(colors.onTertiaryContainer.copy(alpha = 0.08f), CircleShape),
+            )
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(start = 22.dp, end = 80.dp, top = 24.dp, bottom = 24.dp),
+            ) {
+                Text(
+                    text = stringResource(greeting),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp,
+                    color = colors.onPrimaryContainer,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(Res.string.home_greeting_subtitle),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.onPrimaryContainer.copy(alpha = 0.78f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HomeBentoTile(
+                icon = MetrolistIcons.Default.Search,
+                label = stringResource(Res.string.search),
+                container = colors.secondaryContainer,
+                content = colors.onSecondaryContainer,
+                onClick = onSearchClick,
+                modifier = Modifier.weight(1f),
+            )
+            HomeBentoTile(
+                icon = MetrolistIcons.Outlined.LibraryMusic,
+                label = stringResource(Res.string.library),
+                container = colors.tertiaryContainer,
+                content = colors.onTertiaryContainer,
+                onClick = onLibraryClick,
+                modifier = Modifier.weight(1f),
             )
         }
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 72.dp, top = 20.dp, bottom = 20.dp),
+    }
+}
+
+@Composable
+private fun HomeBentoTile(
+    icon: ImageVector,
+    label: String,
+    container: Color,
+    content: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        color = container,
+        contentColor = content,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            Box(
+                Modifier.size(36.dp).background(content.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            }
             Text(
-                text = stringResource(greeting),
-                style = MaterialTheme.typography.headlineSmall,
+                text = label,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = colors.onPrimaryContainer,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(Res.string.home_greeting_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.onPrimaryContainer.copy(alpha = 0.78f),
-                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }

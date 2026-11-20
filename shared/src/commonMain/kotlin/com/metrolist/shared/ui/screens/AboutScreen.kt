@@ -8,9 +8,11 @@
 package com.metrolist.shared.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
@@ -80,6 +83,8 @@ import com.metrolist.shared.generated.resources.app_name
 import com.metrolist.shared.generated.resources.back
 import com.metrolist.shared.generated.resources.build_type_debug
 import com.metrolist.shared.generated.resources.build_type_release
+import com.metrolist.shared.generated.resources.credits_contributor_claude_role
+import com.metrolist.shared.generated.resources.credits_contributor_section
 import com.metrolist.shared.generated.resources.devmode_already_active
 import com.metrolist.shared.generated.resources.devtools_enabled
 import com.metrolist.shared.generated.resources.play
@@ -224,6 +229,8 @@ fun AboutScreen(
                 onContributorClick = { selectedContributor = it },
                 onContributorLongClick = onContributorLongClick,
             )
+
+            ClaudeContributorSection(colorScheme = colorScheme)
 
             CollaboratorsList(
                 contributors = AboutContributors.leads,
@@ -501,6 +508,60 @@ private fun CollaboratorsList(
                             modifier = Modifier.size(20.dp),
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+/** Kontributor Claude (Anthropic), ditampilkan tepat di bawah bagian Kreator. */
+@Composable
+private fun ClaudeContributorSection(colorScheme: ColorScheme) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(Res.string.credits_contributor_section),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
+            color = colorScheme.primary,
+            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp).semantics { heading() },
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = colorScheme.surfaceContainer,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                val avatarShape = MaterialShapes.Cookie12Sided.toPolygonShape()
+                Box(
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .clip(avatarShape)
+                            .background(Brush.linearGradient(listOf(colorScheme.primary, colorScheme.tertiary))),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "C",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = colorScheme.onPrimary,
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Claude",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colorScheme.onSurface,
+                    )
+                    Text(
+                        text = stringResource(Res.string.credits_contributor_claude_role),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }

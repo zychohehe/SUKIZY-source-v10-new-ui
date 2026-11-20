@@ -64,10 +64,26 @@ jobs:
         env:
           PART: ${{ inputs.bump || 'patch' }}
           BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Push yang sudah mengubah appVersion sendiri (rilis manual) dipakai apa adanya, tidak dinaikkan lagi.
+          if [ "$EVENT" = "push" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            old="$(git show "$BEFORE:gradle.properties" | sed -n 's/^appVersion=//p')"
+            cur="$(sed -n 's/^appVersion=//p' gradle.properties)"
+            if [ -n "$cur" ] && [ "$old" != "$cur" ]; then
+              echo "appVersion diubah manual ($old -> $cur), bump otomatis dilewati."
+              git rev-parse -q --verify "refs/tags/v$cur" >/dev/null || { git tag "v$cur" && git push origin "v$cur"; }
+              echo "version=$cur" >> "$GITHUB_OUTPUT"
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              echo "### Versi manual: \`$cur\`" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          fi
 
           for attempt in 1 2 3; do
             git fetch origin "$BRANCH" --tags
