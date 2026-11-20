@@ -7,6 +7,7 @@
 
 package com.metrolist.shared.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -331,6 +332,7 @@ fun SearchBar(
                 color = searchBarColors.containerColor,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)),
             )
         } else {
             val barHeight = if (isTv) 48.dp else 40.dp

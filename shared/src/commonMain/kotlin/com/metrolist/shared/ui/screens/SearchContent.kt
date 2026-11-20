@@ -485,7 +485,7 @@ private fun SearchEmptyState(
                         Spacer(Modifier.height(12.dp))
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             searchHistory.forEach { historyItem ->
                                 Row(
@@ -493,21 +493,30 @@ private fun SearchEmptyState(
                                         Modifier
                                             .fillMaxWidth()
                                             .heightIn(min = 60.dp)
-                                            .clip(RoundedCornerShape(ComponentShapes.SearchItemCornerRadius))
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
                                             .combinedClickable(
                                                 onClick = { onHistoryItemClick(historyItem) },
                                                 onLongClickLabel = text.removeRecentSearchAction,
                                                 onLongClick = { historyItemToRemove = historyItem },
-                                            ).padding(horizontal = 16.dp),
+                                            ).padding(start = 12.dp, end = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                                 ) {
-                                    Icon(
-                                        MetrolistIcons.Outlined.History,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(24.dp),
-                                    )
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .size(40.dp)
+                                                .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            MetrolistIcons.Outlined.History,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
                                     Text(
                                         text = historyItem,
                                         style = MaterialTheme.typography.titleMedium,
@@ -561,10 +570,16 @@ private fun RecentSectionTitle(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Box(
+            Modifier
+                .size(width = 4.dp, height = 24.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.primary),
+        )
         Text(
             text = title,
             style = MaterialTheme.typography.headlineMediumEmphasized,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = onClearClick, shapes = IconButtonDefaults.shapes()) {

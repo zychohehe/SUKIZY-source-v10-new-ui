@@ -201,6 +201,7 @@ import com.metrolist.shared.ui.components.BottomSheet
 import com.metrolist.shared.ui.components.COLLAPSED_ANCHOR
 import com.metrolist.shared.ui.components.ChipShelf
 import com.metrolist.shared.ui.components.EXPANDED_ANCHOR
+import com.metrolist.shared.ui.components.HomeGreetingHeader
 import com.metrolist.shared.ui.components.HomeLoadingPlaceholder
 import com.metrolist.shared.ui.components.MiniPlayer
 import com.metrolist.shared.ui.components.PopupContent
@@ -1107,6 +1108,11 @@ fun MobileApp(
                                                                     shapes = ButtonDefaults.shapes(),
                                                                 ) { Text(text.tryAgain) }
                                                             }
+                                                        }
+                                                    }
+                                                    if (homeState.error.isNullOrBlank()) {
+                                                        item(key = "home_greeting") {
+                                                            HomeGreetingHeader(Modifier.padding(top = MdSpacing.xs))
                                                         }
                                                     }
                                                     if (homeState.chips.isNotEmpty()) {

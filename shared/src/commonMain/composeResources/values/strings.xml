@@ -5533,4 +5533,14 @@
     <string name="ai_setup_privacy_settings">Open privacy settings</string>
     <string name="ai_setup_sign_in_again">Sign in again</string>
     <string name="ai_setup_key_limits">Review key limits</string>
+    <!-- Translators: Greeting at the top of the Home screen, shown from 05:00 to 10:59. -->
+    <string name="home_greeting_morning">Good morning</string>
+    <!-- Translators: Greeting at the top of the Home screen, shown from 11:00 to 14:59. -->
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <!-- Translators: Greeting at the top of the Home screen, shown from 15:00 to 17:59. -->
+    <string name="home_greeting_evening">Good evening</string>
+    <!-- Translators: Greeting at the top of the Home screen, shown from 18:00 to 04:59. -->
+    <string name="home_greeting_night">Good night</string>
+    <!-- Translators: Supporting line under the greeting at the top of the Home screen. -->
+    <string name="home_greeting_subtitle">What are we listening to today?</string>
 </resources>

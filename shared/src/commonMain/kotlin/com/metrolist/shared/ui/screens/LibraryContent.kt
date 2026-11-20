@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
@@ -86,6 +87,7 @@ import com.metrolist.shared.constants.gridTileColumns
 import com.metrolist.shared.generated.resources.Res
 import com.metrolist.shared.generated.resources.display_density
 import com.metrolist.shared.generated.resources.filter_downloaded
+import com.metrolist.shared.generated.resources.filter_library
 import com.metrolist.shared.generated.resources.library_load_failed
 import com.metrolist.shared.generated.resources.playlist_direction_ascending
 import com.metrolist.shared.generated.resources.playlist_direction_descending
@@ -522,7 +524,7 @@ fun LibraryContent(
                                         true,
                                         { onAutoPlaylistClick(playlist.type) },
                                     ) {
-                                        AutoPlaylistQuickCard(playlist)
+                                        AutoPlaylistQuickCard(playlist, searchedAutoPlaylists.indexOf(playlist))
                                     }
                                 }
                             }
@@ -693,6 +695,28 @@ private fun LibraryHeader(
     val sorting = Settings.shared.librarySorting(sortingFilter)
     val ascending = sorting.direction == SortDirection.ASCENDING
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (!isDesktop) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 2.dp, top = 4.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .size(width = 4.dp, height = 28.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = stringResource(Res.string.filter_library),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
         ChipShelf(
             options = LibraryFilter.entries.filterNot { it == LibraryFilter.PODCASTS && Settings.shared.hidePodcasts },
             selectedOption = selectedFilter,
@@ -943,45 +967,57 @@ private fun AutoPlaylistItem(
 }
 
 @Composable
-private fun AutoPlaylistQuickCard(playlist: LibraryAutoPlaylist) {
-    val shape = RoundedCornerShape(20.dp)
+private fun AutoPlaylistQuickCard(
+    playlist: LibraryAutoPlaylist,
+    accentIndex: Int = 0,
+) {
+    val colors = MaterialTheme.colorScheme
+    // Tiap kartu memakai pasangan warna tema yang berbeda supaya baris akses cepat terasa hidup.
+    val (container, onContainer, accent) =
+        when (accentIndex.mod(3)) {
+            0 -> Triple(colors.primaryContainer, colors.onPrimaryContainer, colors.primary)
+            1 -> Triple(colors.secondaryContainer, colors.onSecondaryContainer, colors.secondary)
+            else -> Triple(colors.tertiaryContainer, colors.onTertiaryContainer, colors.tertiary)
+        }
+    val shape = RoundedCornerShape(24.dp)
     Row(
         modifier =
             Modifier
-                .width(168.dp)
+                .width(184.dp)
                 .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f))
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                .background(Brush.linearGradient(listOf(container, container.copy(alpha = 0.55f))))
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier =
                 Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(accent),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = playlist.icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(22.dp),
+                tint = container,
+                modifier = Modifier.size(24.dp),
             )
         }
         Column(Modifier.weight(1f)) {
             Text(
                 playlist.title,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
+                color = onContainer,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 playlist.badge ?: playlist.subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = onContainer.copy(alpha = 0.75f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

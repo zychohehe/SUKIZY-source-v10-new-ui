@@ -193,6 +193,12 @@ java {
 
 val sentryAuthToken = providers.environmentVariable("SENTRY_AUTH_TOKEN").filter(String::isNotBlank)
 val appVersion = providers.gradleProperty("appVersion").get()
+
+// versionCode ikut naik otomatis dari appVersion (MAJOR.MINOR.PATCH), supaya APK baru selalu bisa menimpa yang lama.
+val appVersionCode =
+    Regex("^(\\d+)\\.(\\d+)\\.(\\d+)").find(appVersion)!!.destructured.let { (major, minor, patch) ->
+        major.toInt() * 1_000_000 + minor.toInt() * 1_000 + patch.toInt()
+    }
 val bundledLanguageTags =
     rootProject
         .file("shared/src/commonMain/composeResources")
@@ -255,7 +261,7 @@ android {
         applicationId = "com.sukizy.app"
         minSdk = 24
         targetSdk = 37
-        versionCode = 8
+        versionCode = appVersionCode
         versionName = appVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

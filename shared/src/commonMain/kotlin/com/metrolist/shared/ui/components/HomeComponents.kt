@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,11 +40,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.metrolist.shared.generated.resources.Res
+import com.metrolist.shared.generated.resources.home_greeting_afternoon
+import com.metrolist.shared.generated.resources.home_greeting_evening
+import com.metrolist.shared.generated.resources.home_greeting_morning
+import com.metrolist.shared.generated.resources.home_greeting_night
+import com.metrolist.shared.generated.resources.home_greeting_subtitle
 import com.metrolist.shared.generated.resources.see_all
 import com.metrolist.shared.ui.components.images.AsyncImage
 import com.metrolist.shared.ui.icons.MetrolistIcons
 import com.metrolist.shared.ui.utils.artistArtworkShape
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Clock
 
 private val GenreGradients =
     listOf(
@@ -140,6 +151,15 @@ fun SectionTitle(
                 ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (thumbnailUrl == null) {
+            Box(
+                Modifier
+                    .size(width = 4.dp, height = if (isWide) 28.dp else 22.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.primary),
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+        }
         if (thumbnailUrl != null) {
             AsyncImage(
                 url = thumbnailUrl,
@@ -251,6 +271,76 @@ private fun SectionActionButton(
                 shape = RoundedCornerShape(100.dp),
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                 content = content,
+            )
+        }
+    }
+}
+
+private fun greetingForHour(hour: Int): StringResource =
+    when (hour) {
+        in 5..10 -> Res.string.home_greeting_morning
+        in 11..14 -> Res.string.home_greeting_afternoon
+        in 15..17 -> Res.string.home_greeting_evening
+        else -> Res.string.home_greeting_night
+    }
+
+/** Kartu sapaan di puncak Home: gradien lembut dari warna tema, sapaan sesuai jam, dan tombol play dekoratif. */
+@Composable
+fun HomeGreetingHeader(modifier: Modifier = Modifier) {
+    val greeting =
+        remember {
+            greetingForHour(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour)
+        }
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            colors.primaryContainer,
+                            colors.tertiaryContainer.copy(alpha = 0.85f),
+                        ),
+                    ),
+                ),
+    ) {
+        // Lingkaran dekoratif di pojok kanan atas untuk memberi kedalaman tanpa blur.
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 14.dp, end = 14.dp)
+                .size(44.dp)
+                .background(colors.onPrimaryContainer.copy(alpha = 0.12f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = MetrolistIcons.Default.PlayArrow,
+                contentDescription = null,
+                tint = colors.onPrimaryContainer,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 72.dp, top = 20.dp, bottom = 20.dp),
+        ) {
+            Text(
+                text = stringResource(greeting),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = colors.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(Res.string.home_greeting_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onPrimaryContainer.copy(alpha = 0.78f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

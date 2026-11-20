@@ -8,6 +8,16 @@ on:
     paths-ignore:
       - '**.md'
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Bagian versi yang dinaikkan sebelum build
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+          - none
 
 permissions:
   contents: read
@@ -24,8 +34,70 @@ env:
     -Dorg.gradle.caching=true
 
 jobs:
+  # Menaikkan appVersion otomatis di setiap push ke branch default (dan run manual),
+  # lalu commit balik dengan [skip ci] supaya tidak memicu build ganda.
+  bump-version:
+    name: Naikkan versi
+    if: >-
+      github.event_name != 'pull_request'
+      && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      && github.actor != 'github-actions[bot]'
+      && !contains(github.event.head_commit.message, '[skip ci]')
+      && (github.event_name != 'workflow_dispatch' || inputs.bump != 'none')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      sha: ${{ steps.bump.outputs.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump appVersion, README dan tag
+        id: bump
+        shell: bash
+        env:
+          PART: ${{ inputs.bump || 'patch' }}
+          BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin "$BRANCH" --tags
+            git reset --hard "origin/$BRANCH"
+            version="$(python3 scripts/bump_version.py "$PART")"
+            # Tag sudah ada (mis. run ulang)? Naikkan patch lagi sampai bebas.
+            while git rev-parse -q --verify "refs/tags/v$version" >/dev/null; do
+              version="$(python3 scripts/bump_version.py patch)"
+            done
+            git add gradle.properties README.md
+            git commit -m "chore: versi $version [skip ci]"
+            git tag "v$version"
+            if git push origin "HEAD:$BRANCH" && git push origin "v$version"; then
+              echo "version=$version" >> "$GITHUB_OUTPUT"
+              echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              echo "### Versi baru: \`$version\`" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Push ditolak (ada commit baru), coba lagi $attempt/3"
+            git tag -d "v$version" || true
+            sleep $((attempt * 3))
+          done
+          echo "::error::Gagal push bump versi setelah 3 percobaan. Cek aturan branch protection."
+          exit 1
+
   build:
     name: SUKIZY BUILD APK
+    needs: bump-version
+    # Tetap build walau bump dilewati (PR, branch lain, run tanpa bump); gagal bump = build berhenti.
+    if: ${{ !cancelled() && (needs.bump-version.result == 'success' || needs.bump-version.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -33,6 +105,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          # Kosong = commit pemicu; terisi = commit hasil bump versi.
+          ref: ${{ needs.bump-version.outputs.sha }}
           submodules: recursive
           fetch-depth: 1
 
@@ -150,7 +224,8 @@ jobs:
           fi
 
           mkdir -p build-apks
-          apk="build-apks/SUKIZY-debug-run${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}.apk"
+          version="$(python3 scripts/bump_version.py none)"
+          apk="build-apks/SUKIZY-v${version}-debug-run${GITHUB_RUN_NUMBER}-$(git rev-parse --short=7 HEAD).apk"
           cp "${found[0]}" "$apk"
           echo "APK_PATH=$apk" >> "$GITHUB_ENV"
 
@@ -170,6 +245,7 @@ jobs:
             echo ""
             echo "| | |"
             echo "|---|---|"
+            echo "| Versi | \`$version\` |"
             echo "| File | \`$(basename "$apk")\` |"
             echo "| Ukuran | $(du -h "$apk" | cut -f1) |"
             echo "| APK SHA-256 | \`$(sha256sum "$apk" | cut -d' ' -f1)\` |"

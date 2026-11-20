@@ -14,6 +14,13 @@ Versi **14.0.7**
 > [!WARNING]
 > Memakai SUKIZY untuk mengakses YouTube Music bisa melanggar Ketentuan Layanan YouTube. Risiko ditanggung pengguna sendiri.
 
+## Yang baru di 14.0.8
+
+- **Versi otomatis:** workflow SUKIZY BUILD APK menaikkan `appVersion` (patch) di setiap push ke branch default, memperbarui README, membuat tag `vX.Y.Z`, dan memberi nama APK sesuai versi. `versionCode` kini dihitung dari `appVersion`. Run manual bisa memilih patch, minor, major, atau none.
+- **Home lebih keren:** kartu sapaan bergradien sesuai jam di puncak Home dan judul section dengan aksen warna tema.
+- **Koleksi lebih keren:** judul Koleksi, kartu akses cepat bergradien dengan warna tema bergantian.
+- **Search lebih keren:** kolom pencarian dengan garis tipis warna tema dan riwayat pencarian berbentuk kartu.
+
 ## Yang baru di 14.0.7
 
 - **Navbar polos dan ringan:** tidak lagi memakai liquid glass. Sekarang berupa pill datar dengan penanda tab `secondaryContainer`, tanpa blur, gradien, dan border.
